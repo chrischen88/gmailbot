@@ -26,17 +26,21 @@ def check(sender, subject):
     return "Other"
 
 def labelEmails(service):
-    size = 100
+    size = 200
+    tenthSize = size / 10
     results = service.users().messages().list(userId='me',maxResults=size).execute()
     messages = results.get('messages', [])
     labels = {}
     if not messages:
         print('No messages found.')
     else:
-        print('E-mails:')
+        count = 0
         for e in messages:
-            messageId = e['id']
-            message = service.users().messages().get(userId='me',id=messageId,format='full').execute()
+            if count % tenthSize == 0:
+                print("-> " + str(int(count // tenthSize) * 10) + "% finished")
+            if count == size - 1:
+                print("-> 100% finished")
+            message = service.users().messages().get(userId='me',id=e['id'],format='full').execute()
             headers = message['payload']['headers']
             sender = getHeader(headers, "From")
             subject = getHeader(headers,"Subject")
@@ -45,6 +49,7 @@ def labelEmails(service):
                 labels.get(label).append(sender + " - " + subject)
             else:
                 labels[label] = [(sender + " - " + subject)]
+            count = count + 1
 
         return labels
 
@@ -73,14 +78,26 @@ def main():
 
     service = build('gmail', 'v1', credentials=creds)
 
-    # Call the Gmail API
-    labels = labelEmails(service)
-    for l in labels:
-        print(l)
-        print("===============")
-        for e in labels[l]:
-            print(e)
-        print()
+    input_code = 0
+    print("This is E-Mail Bot! What would you like to do?")
+    while input_code != 3:
+        if input_code > 0 and input_code < 3:
+            print("What else would you like to do?")
+        print("(1) Label E-Mails")
+        print("(2) Remove old E-Mails")
+        print("(3) Quit Program")
+        input_code = int(input("Enter input:"))
+        if input_code == 1:
+            labels = labelEmails(service)
+            for l in labels:
+                print(l)
+                print("===============")
+                for e in labels[l]:
+                    print(e)
+                print()
+        if input_code > 3 or input_code < 1:
+            print("\nInvalid input. Try again.")
+    
 
             
 
